@@ -1,0 +1,29 @@
+@App:name("TempAlertKafka")
+@App:description("Temperature alert system consuming ML forecasts from Kafka")
+
+-- Source: Consume ML forecasts from Kafka
+@source(
+    type='kafka',
+    topic.list='ml-forecast',
+    group.id='siddhi-alert-group',
+    threading.option='single.thread',
+    bootstrap.servers='kafka:9092',
+    @map(type='json')
+)
+define stream SensorStream (sensorId string, temperature double);
+
+-- Sink: Log alerts
+@sink(
+    type='log',
+    prefix='🚨 TEMPERATURE ALERT'
+)
+define stream AlertStream (sensorId string, temperature double, message string);
+
+-- Query: Filter temperatures above 15°C and generate alerts
+@info(name='tempAlertQuery')
+from SensorStream[temperature > 15]
+select 
+    sensorId, 
+    temperature,
+    str:concat('Temperature ', cast(temperature, 'string'), '°C exceeds threshold of 15°C') as message
+insert into AlertStream;
