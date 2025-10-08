@@ -35,7 +35,6 @@ services:
       timeout: 10s
       retries: 5
 
-  # Skip Siddhi for now - we'll add it after ML consumer works
   # siddhi:
   #   image: siddhiio/siddhi-runner-alpine:5.1.2
   #   container_name: siddhi-runner
@@ -69,3 +68,4 @@ services:
 networks:
   streaming-network:
     driver: bridge
+
