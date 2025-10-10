@@ -35,20 +35,6 @@ services:
       timeout: 10s
       retries: 5
 
-  # siddhi:
-  #   image: siddhiio/siddhi-runner-alpine:5.1.2
-  #   container_name: siddhi-runner
-  #   volumes:
-  #     - ./TempAlertKafka.siddhi:/home/siddhi_user/siddhi-runner/deployment/siddhi-files/TempAlertKafka.siddhi
-  #   ports:
-  #     - "8006:8006"
-  #   depends_on:
-  #     kafka:
-  #       condition: service_healthy
-  #   networks:
-  #     - streaming-network
-  #   restart: unless-stopped
-
   ml-consumer:
     build:
       context: .
@@ -65,7 +51,25 @@ services:
     restart: unless-stopped
     command: ["python", "-u", "consumer-siddhi.py"]
 
+  siddhi:
+    build:
+      context: .
+      dockerfile: Dockerfile.siddhi
+    container_name: siddhi-runner
+    volumes:
+      - ./TempAlertKafka.siddhi:/home/siddhi_user/siddhi-runner/deployment/siddhi-files/TempAlertKafka.siddhi
+    ports:
+      - "8006:8006"
+      - "9090:9090"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - streaming-network
+    restart: unless-stopped
+    environment:
+      - JAVA_OPTS=-Xms256m -Xmx512m
+
 networks:
   streaming-network:
     driver: bridge
-
