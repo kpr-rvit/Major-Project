@@ -1,0 +1,27 @@
+FROM siddhiio/siddhi-runner-alpine:5.1.2
+
+USER root
+
+# Install wget if not present
+RUN apk add --no-cache wget
+
+# Download Siddhi Kafka extension
+RUN wget -P /home/siddhi_user/siddhi-runner/bundles/ \
+    https://repo1.maven.org/maven2/io/siddhi/extension/io/kafka/siddhi-io-kafka/5.0.5/siddhi-io-kafka-5.0.5.jar
+
+# Download Kafka dependencies and place in jars directory
+RUN wget -P /home/siddhi_user/siddhi-runner/jars/ \
+    https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/2.3.1/kafka-clients-2.3.1.jar && \
+    wget -P /home/siddhi_user/siddhi-runner/jars/ \
+    https://repo1.maven.org/maven2/org/lz4/lz4-java/1.6.0/lz4-java-1.6.0.jar && \
+    wget -P /home/siddhi_user/siddhi-runner/jars/ \
+    https://repo1.maven.org/maven2/org/xerial/snappy/snappy-java/1.1.7.3/snappy-java-1.1.7.3.jar
+
+# Change ownership back to siddhi user
+RUN chown -R siddhi_user:siddhi_io /home/siddhi_user/siddhi-runner/bundles/ && \
+    chown -R siddhi_user:siddhi_io /home/siddhi_user/siddhi-runner/jars/
+
+USER siddhi_user
+
+# Default command from base image will run Siddhi
+CMD ["/home/siddhi_user/init.sh"]
