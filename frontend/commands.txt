@@ -1,0 +1,3 @@
+cd C:\sensor-pipeline\frontend
+
+npm run dev
