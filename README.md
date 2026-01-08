@@ -1,4 +1,4 @@
-This project implements a Smart Agriculture Decision Support System (DSS) using Machine Learning (ML) and Complex Event Processing (CEP). The system predicts future environmental conditions, generates crop recommendations, and produces real-time alerts based on streaming agricultural data.
+This project implements Smart Agriculture Decision Support System (DSS) using Machine Learning (ML) and Complex Event Processing (CEP). The system predicts future environmental conditions, generates crop recommendations, and produces real-time alerts based on streaming agricultural data.
 
 Historical agricultural and weather data are used to train machine learning models. A stacked forecasting model combining LSTM, GRU, and XGBoost is used to predict environmental parameters such as temperature and humidity. A Random Forest classifier is implemented to recommend suitable crops based on user-provided weather and soil parameters.
 
