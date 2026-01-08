@@ -1,0 +1,21 @@
+docker-compose up -d
+
+docker run -d --name siddhi-runner --network sensor-pipeline_streaming-network -p 8006:8006 -v ${PWD}\TempAlertKafka.siddhi:/home/siddhi_user/siddhi-runner/deployment/siddhi-files/TempAlertKafka.siddhi siddhiio/siddhi-runner-alpine:5.1.2
+
+
+docker exec siddhi-runner wget -P /home/siddhi_user/siddhi-runner/bundles/ https://repo1.maven.org/maven2/io/siddhi/extension/io/kafka/siddhi-io-kafka/5.0.5/siddhi-io-kafka-5.0.5.jar
+docker exec siddhi-runner wget -P /home/siddhi_user/siddhi-runner/jars/ https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/2.3.1/kafka-clients-2.3.1.jar
+docker exec siddhi-runner wget -P /home/siddhi_user/siddhi-runner/jars/ https://repo1.maven.org/maven2/org/lz4/lz4-java/1.6.0/lz4-java-1.6.0.jar
+docker exec siddhi-runner wget -P /home/siddhi_user/siddhi-runner/jars/ https://repo1.maven.org/maven2/org/xerial/snappy/snappy-java/1.1.7.3/snappy-java-1.1.7.3.jar
+
+docker restart siddhi-runner
+
+docker logs siddhi-runner
+
+docker-compose up
+
+#in a new terminal:
+python producer.py
+
+#in a new terminal:
+docker logs -f siddhi-runner  

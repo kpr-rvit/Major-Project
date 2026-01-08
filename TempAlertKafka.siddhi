@@ -1,0 +1,126 @@
+@App:name('TempAlertKafka')
+@App:description('Temperature alert system consuming ML forecasts from Kafka with time windows')
+
+--========================
+-- Source: ML forecasts from Kafka
+--========================
+@source(
+    type='kafka',
+    topic.list='ml-forecast',
+    group.id='siddhi-alert-group',
+    threading.option='single.thread',
+    bootstrap.servers='kafka:9092',
+    @map(type='json')
+)
+define stream SensorStream (
+    sensorId string,
+    temperature_2m double,
+    relative_humidity_2m double,
+    wind_speed_10m double,
+    soil_temperature_0_to_7cm double
+);
+
+--========================
+-- Sinks: SEND ALERTS TO KAFKA (for Python app)
+--========================
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-temp-alerts',
+    @map(type='json')
+)
+define stream TemperatureAlertStream(sensorId string, temperature double);
+
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-humidity-alerts',
+    @map(type='json')
+)
+define stream HumidityAlertStream(sensorId string, humidity double);
+
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-wind-alerts',
+    @map(type='json')
+)
+define stream WindAlertStream(sensorId string, wind_speed double);
+
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-soiltemp-alerts',
+    @map(type='json')
+)
+define stream SoilTempAlertStream(sensorId string, soil_temp double);
+
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-composite-alerts',
+    @map(type='json')
+)
+define stream CompositeAlertStream(sensorId string, temperature double, humidity double);
+
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-sustained-lowtemp-alerts',
+    @map(type='json')
+)
+define stream SustainedLowTempStream(sensorId string, t1 double, t2 double, t3 double);
+
+@sink(
+    type='kafka',
+    bootstrap.servers='kafka:9092',
+    topic='siddhi-lowtemp-humiditysoil-alerts',
+    @map(type='json')
+)
+define stream LowTempOrSoilLowHumidityStream(sensorId string, temp double, soilTemp double, humidity double);
+
+--========================
+-- Threshold Alerts with 5-minute window
+--========================
+@info(name='temperatureThreshold')
+from SensorStream[temperature_2m < 20 or temperature_2m > 35]#window.time(5 min)
+select sensorId, temperature_2m as temperature
+insert into TemperatureAlertStream;
+
+@info(name='humidityThreshold')
+from SensorStream[relative_humidity_2m < 70]#window.time(5 min)
+select sensorId, relative_humidity_2m as humidity
+insert into HumidityAlertStream;
+
+@info(name='windThreshold')
+from SensorStream[wind_speed_10m < 2 or wind_speed_10m > 7]#window.time(5 min)
+select sensorId, wind_speed_10m as wind_speed
+insert into WindAlertStream;
+
+@info(name='soilTempThreshold')
+from SensorStream[soil_temperature_0_to_7cm < 20 or soil_temperature_0_to_7cm > 30]#window.time(5 min)
+select sensorId, soil_temperature_0_to_7cm as soil_temp
+insert into SoilTempAlertStream;
+
+--========================
+-- Composite Alert
+--========================
+@info(name='tempHumidityComposite')
+from SensorStream[temperature_2m < 20 and relative_humidity_2m < 70]#window.time(5 min)
+select sensorId, temperature_2m as temperature, relative_humidity_2m as humidity
+insert into CompositeAlertStream;
+
+--========================
+-- Sequence / Sustained patterns
+--========================
+@info(name='sustainedLowTemp')
+from every e1=SensorStream[temperature_2m < 20] ->
+     e2=SensorStream[temperature_2m < 20] ->
+     e3=SensorStream[temperature_2m < 20]
+select e1.sensorId, e1.temperature_2m as t1, e2.temperature_2m as t2, e3.temperature_2m as t3
+insert into SustainedLowTempStream;
+
+@info(name='lowTempOrSoilLowHumidity')
+from every e1=SensorStream[(temperature_2m < 20 or soil_temperature_0_to_7cm < 20) and relative_humidity_2m < 70]
+select e1.sensorId, e1.temperature_2m as temp, e1.soil_temperature_0_to_7cm as soilTemp, e1.relative_humidity_2m as humidity
+insert into LowTempOrSoilLowHumidityStream;

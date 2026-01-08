@@ -1,0 +1,13 @@
+#Stop and Remove Current Setup (if any):
+docker-compose down
+docker stop siddhi-runner
+docker rm siddhi-runner
+
+#Build Everything(if first time):
+docker-compose build
+
+#Start Everything:
+docker-compose up -d
+
+#Run Producer:
+python producer.py
